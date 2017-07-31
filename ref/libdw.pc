@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir= /usr/lib/i386-linux-gnu/
+includedir= /usr/include
+
+# /usr/lib/pkgconfig/
+Name: libdw1
+Description:  libdw1 development libraries and header files
+Version:   0.159-4.2
+Libs: -L${libdir} -ldw
+Cflags: -I${includedir}

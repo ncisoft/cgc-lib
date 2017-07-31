@@ -1,0 +1,10 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir= /usr/lib/i386-linux-gnu/
+includedir= /usr/include
+
+Name: jemalloc
+Description:  development files and documentation for jemalloc
+Version:  3.6.0-3
+Libs: -L${libdir} -ljemalloc -L/opt/lib
+Cflags: -I${includedir}
