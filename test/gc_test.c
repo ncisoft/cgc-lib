@@ -96,14 +96,14 @@ int main()
 step_assert_testcase_0A:
   xgc_assert( xmask_check(1) == false ); 
   xgc_assert( xmask_check(2) == false ); 
-  xgc_debug("**[pass]testcase_0A\n");
+  xgc_info("**[pass]testcase_0A\n");
   testcase_0B();
 step_assert_testcase_0B:
   test_null();
   xgc_assert( xmask_check(3) == false ); 
   xgc_assert( xmask_check(4) == false ); 
   xgc_assert( xmask_check(5) == false ); 
-  xgc_debug("**[pass]testcase_0B\n");
+  xgc_info("**[pass]testcase_0B\n");
   gc_collect();
   return 0;
 }
