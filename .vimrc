@@ -21,7 +21,6 @@ set wildchar=<Tab> wildcharm=<C-Z>
 " http://timothyqiu.com/archives/using-clang-complete-for-c-cplusplus-in-vim/
 let g:clang_c_options = ' -std=c99 -I/usr/include/lua5.1/ -I$PWD/include/ '  
 let g:clang_cpp_options = ' -std=c++11 -stdlib=libc++  -I$PWD/include/ -I/usr/local/include/ -I/usr/include -I/usr/include/c++/4.9 -I/usr/include/i386-linux-gnu/c++/4.9 ' 
-let g:clang_user_options = ' -std=c99  -I/usr/include/lua5.1/ -I$PWD/include/ ' 
         let g:clang_compilation_database = './build'
         let g:clang_cpp_completeopt = 'longest,menuone,preview'
 "        let g:clang_include_sysheaders = 1
@@ -35,7 +34,7 @@ let g:syntastic_cpp_include_dirs=['-I$PWD/include/', '-I /usr/include',  '-I/usr
 
 let g:syntastic_c_compiler="c"
 let g:syntastic_c_compiler_options = " -std=c99  "
-let g:syntastic_c_include_dirs=['-I$PWD/include/', ' -I/usr/include/lua5.1']
+let g:syntastic_c_include_dirs=['-I$PWD/include/', '-I/usr/include/lua5.1', '-I./contrib/lua51-ext/']
 
 " https://superuser.com/questions/77800/vims-autocomplete-how-to-prevent-vim-to-read-some-include-files
 set complete-=i
@@ -43,3 +42,4 @@ set complete-=i
 " dont highlight inactive window
 let g:diminactive_use_colorcolumn = 0
 let g:ctrlp_clear_cache_on_exit = 1
+let g:tagbar_ctags_bin = "ctags"

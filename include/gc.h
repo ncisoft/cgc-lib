@@ -27,18 +27,24 @@ extern "C"
   typedef struct _gc_root_t {
     struct _gc_root_t *next;
     bool is_primitive;
-
+    char my_function_name[128];
+    char my_parent_function_name[128];
+    int m_closed;
   } gc_root_t;
 
   typedef void (*fobj_gc)(void *p);
 
   extern gc_root_t *gc_root_new();
   extern gc_root_t *gc_root_new_with_complex_return();
+
   extern void *gc_malloc(gc_root_t *proot, size_t sz);
   extern void *gc_malloc_with_gc(gc_root_t *proot, size_t sz, fobj_gc _gc);
   extern void gc_mark_ref(void *source_ptr, void *ddest_ptr);
   extern void gc_mark_unref(void *source_ptr, void *ddest_ptr);
   extern void gc_collect();
+
+
+  extern void xgc_print_stacktrace(char *fname, int lineno);
 
 
 #ifndef cast
@@ -54,17 +60,20 @@ extern "C"
 
 #define GC_LOG(LEVEL, logstr, __fmt, ...)       if (LEVEL <= __gc_log_level)  {   \
   if (GC_LOG_BRIEF) \
-  fprintf(stderr, "%s:%d\t%s\t", strrchr(__FILE__, '/')+1,  __LINE__,logstr); \
+  fprintf(stdout, "%s:%d\t%s\t", strrchr(__FILE__, '/')+1,  __LINE__,logstr); \
   else \
-  fprintf(stderr, "%s:%s:%d\t%s\t", strrchr(__FILE__, '/')+1,   __FUNCTION__,__LINE__, logstr); \
-fprintf(stderr, __fmt, ##__VA_ARGS__); \
+  fprintf(stdout, "%s:%s:%d\t%s\t", strrchr(__FILE__, '/')+1,   __FUNCTION__,__LINE__, logstr); \
+fprintf(stdout, __fmt, ##__VA_ARGS__); \
 }
 
 #define xgc_debug(__fmt, ...)     GC_LOG(GC_LOGLEVEL_DEBUG, "DEBUG", __fmt, ##__VA_ARGS__)
 #define xgc_error(__fmt, ...)     GC_LOG(GC_LOGLEVEL_ERROR, "ERROR"__fmt, ##__VA_ARGS__)
 #define xgc_warn(__fmt, ...)     GC_LOG(GC_LOGLEVEL_WARNING, "WARN", __fmt, ##__VA_ARGS__)
 #define xgc_info(__fmt, ...)     GC_LOG(GC_LOGLEVEL_INFO, "INFO", __fmt, ##__VA_ARGS__)
-#define xgc_assert(expr) assert(expr)
+
+#define xgc_assert(expr)  { if (!(expr)) { xgc_print_stacktrace(__FILE__,  __LINE__); assert(expr); } } 
+
+#define xgc_println() fprintf(stderr, "\n");
 
 extern int __gc_log_level;
 
