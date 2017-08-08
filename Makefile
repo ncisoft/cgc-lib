@@ -14,7 +14,7 @@ compile-v:
 	cd build && ninja -v && cd .. && pwd
 
 tags: 
-	anjuta-tags src/*.c include/*.h*
+	ctags  src/*.c test/*.c include/*.h*
 
 test:
 	cd build && ninja test && pwd && cd .. && anjuta-tags src/*.c include/*.h*

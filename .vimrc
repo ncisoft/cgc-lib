@@ -39,6 +39,12 @@ let g:syntastic_c_include_dirs=['-I$PWD/include/', '-I/usr/include/lua5.1', '-I.
 " https://superuser.com/questions/77800/vims-autocomplete-how-to-prevent-vim-to-read-some-include-files
 set complete-=i
 
+let g:clang_complete_copen=1
+let g:clang_periodic_quickfix=1
+let g:clang_snippets=1
+let g:clang_close_preview=1
+let g:clang_use_library=1
+
 " dont highlight inactive window
 let g:diminactive_use_colorcolumn = 0
 let g:ctrlp_clear_cache_on_exit = 1

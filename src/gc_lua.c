@@ -119,8 +119,8 @@ gc_root_t *gc_root_new_with_param(bool  is_primitive,
   int _top = lua_gettop(L);
   gc_root_t *proot;
 
-  xgc_debug("--func_name=%s\n", func_name);
-  xgc_debug("-- parent_name=%s\n", parent_func_name);
+  xgc_debug("-- func_name = %s\n", func_name);
+  xgc_debug("-- parc_name = %s\n", parent_func_name);
   xgc_assert(func_name[0] != '\0');
   if (__gc_roots.next != NULL)
     xgc_assert( parent_func_name[0] != '\0' );
@@ -152,9 +152,7 @@ gc_root_t *gc_root_new_with_param(bool  is_primitive,
       xgc_assert( _top+2 == lua_gettop(L) );
       luaL_getmetatable(L, MT_ROOT);
       xgc_assert ( lua_istable(pgch->L, -1) ); 
-      xgc_debug("\t top = %d\n", lua_gettop(L));
       lua_setmetatable(L, -2);
-      xgc_debug("\t top = %d\n", lua_gettop(L));
       // stack layout: _G.K_ALIVEROOT_MAP proot
       xgc_assert( _top+2 == lua_gettop(L) );
     }
@@ -167,7 +165,6 @@ gc_root_t *gc_root_new_with_param(bool  is_primitive,
       lua_newtable(pgch->L);
       // stack layout: _G.K_ALIVEROOT_MAP proot {}
       xgc_assert( _top+3 == lua_gettop(L) );
-      xgc_debug("\t top = %d\n", lua_gettop(L));
       xgc_assert ( lua_istable(pgch->L, -1) ); 
       xgc_assert ( lua_isuserdata(pgch->L, -2) ); 
       xgc_assert ( lua_istable(pgch->L, -3) ); 
@@ -178,7 +175,7 @@ gc_root_t *gc_root_new_with_param(bool  is_primitive,
     }
 
 
-  xgc_debug("**new proot = %p\n\n", proot);
+  xgc_debug("**new proot = %p, my_func=%s\n\n", proot, proot->my_function_name);
   return proot;
 
 }

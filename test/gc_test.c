@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-static int masks[10] = {0};
+static int masks[100] = {0};
 
 void xmask_set(int index, bool isUsed)
 {
@@ -40,6 +40,23 @@ void test_null()
   xgc_assert(proot != NULL);
 }
  
+void *test_0C_01()
+{
+  gc_root_t *proot= gc_root_new();
+  void *p10 = obj_new(proot, 10);
+  return p10;
+}
+
+void testcase_0C()
+{
+  gc_root_t *proot= gc_root_new();
+  void *p10 = test_0C_01();
+  void *p11 = obj_new(proot, 11);
+  gc_mark_ref(p11, p10);
+  xgc_assert( xmask_check(10) == true ); 
+  xgc_assert( xmask_check(11) == true ); 
+}
+
 void test_0B_01(void *p3)
 {
   gc_root_t *proot= gc_root_new();
@@ -96,14 +113,26 @@ int main()
 step_assert_testcase_0A:
   xgc_assert( xmask_check(1) == false ); 
   xgc_assert( xmask_check(2) == false ); 
-  xgc_info("**[pass]testcase_0A\n");
+  xgc_info("**[pass] testcase_0A\n");
   testcase_0B();
 step_assert_testcase_0B:
   test_null();
   xgc_assert( xmask_check(3) == false ); 
   xgc_assert( xmask_check(4) == false ); 
   xgc_assert( xmask_check(5) == false ); 
-  xgc_info("**[pass]testcase_0B\n");
+  xgc_info("**[pass] testcase_0B\n");
+step_assert_testcase_0C:
+  testcase_0C();
+  test_null();
+  xgc_assert( xmask_check(10) == false ); 
+  xgc_assert( xmask_check(11) == false ); 
+  xgc_info("**[pass] testcase_0C\n");
+
+  test_null();
+
+  for (int i=1; i < sizeof(masks)/sizeof(int); i++)
+    xgc_assert( xmask_check(i) == false ); 
+
   gc_collect();
   return 0;
 }
