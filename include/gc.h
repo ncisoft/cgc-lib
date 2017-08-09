@@ -1,5 +1,7 @@
 #ifndef __GC_H_
 #define __GC_H_
+#define UUID_2FF3A001_1E1B_4344_888A_70F3AAE7B9BB
+
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -8,6 +10,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
+#include <colors.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -55,21 +58,24 @@ extern "C"
 #define GC_LOGLEVEL_INFO        6
 #define GC_LOGLEVEL_WARNING     5
 #define GC_LOGLEVEL_ERROR       4
+#define GC_LOGLEVEL_FATAL       4
 
 #define GC_LOG_BRIEF true
 
-#define GC_LOG(LEVEL, logstr, __fmt, ...)       if (LEVEL <= __gc_log_level)  {   \
+#define GC_LOG(LEVEL, logstr, color, __fmt, ...)       if (LEVEL <= __gc_log_level)  {   \
   if (GC_LOG_BRIEF) \
-  fprintf(stdout, "%s:%d\t%s\t", strrchr(__FILE__, '/')+1,  __LINE__,logstr); \
+  fprintf(stdout, color "%s:%d\t%s\t", strrchr(__FILE__, '/')+1,  __LINE__,logstr); \
   else \
-  fprintf(stdout, "%s:%s:%d\t%s\t", strrchr(__FILE__, '/')+1,   __FUNCTION__,__LINE__, logstr); \
-fprintf(stdout, __fmt, ##__VA_ARGS__); \
+  fprintf(stdout, color "%s:%s:%d\t%s\t", strrchr(__FILE__, '/')+1,   __FUNCTION__,__LINE__, logstr); \
+  fprintf(stdout, __fmt, ##__VA_ARGS__); \
+  fprintf(stdout, __C_RESET__ ); \
 }
 
-#define xgc_debug(__fmt, ...)     GC_LOG(GC_LOGLEVEL_DEBUG, "DEBUG", __fmt, ##__VA_ARGS__)
-#define xgc_error(__fmt, ...)     GC_LOG(GC_LOGLEVEL_ERROR, "ERROR"__fmt, ##__VA_ARGS__)
-#define xgc_warn(__fmt, ...)     GC_LOG(GC_LOGLEVEL_WARNING, "WARN", __fmt, ##__VA_ARGS__)
-#define xgc_info(__fmt, ...)     GC_LOG(GC_LOGLEVEL_INFO, "INFO", __fmt, ##__VA_ARGS__)
+#define xgc_debug(__fmt, ...)     GC_LOG(GC_LOGLEVEL_DEBUG, "DEBUG", __C_RESET__,  __fmt, ##__VA_ARGS__)
+#define xgc_info(__fmt, ...)     GC_LOG(GC_LOGLEVEL_INFO, "INFO", __C_YELLOW__,  __fmt, ##__VA_ARGS__)
+#define xgc_warn(__fmt, ...)     GC_LOG(GC_LOGLEVEL_WARNING, "WARN", __C_CYAN__,  __fmt, ##__VA_ARGS__)
+#define xgc_error(__fmt, ...)     GC_LOG(GC_LOGLEVEL_ERROR, "ERROR", __C_RED__,  __fmt, ##__VA_ARGS__)
+#define xgc_fatal(__fmt, ...)     GC_LOG(GC_LOGLEVEL_ERROR, "FATAL", __C_RED__,  __fmt, ##__VA_ARGS__)
 
 #define xgc_assert(expr)  { if (!(expr)) { xgc_print_stacktrace(__FILE__,  __LINE__); assert(expr); } } 
 

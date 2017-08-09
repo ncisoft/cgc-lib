@@ -132,6 +132,7 @@ step_assert_testcase_0C:
 
   for (int i=1; i < sizeof(masks)/sizeof(int); i++)
     xgc_assert( xmask_check(i) == false ); 
+  xgc_debug("all xmasks were clean\n")
 
   gc_collect();
   return 0;

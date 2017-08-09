@@ -1,5 +1,6 @@
 #include <luaext.h>
 #include <gc.h>
+#include <colors.h>
 #include <unistd.h>
 #include <execinfo.h>
 #include <stdlib.h>
@@ -80,6 +81,11 @@ int main()
   foo *o = foo_new(); 
   o->mt->set(o, 100);
   o->mt->print(o);
+  printf(__C_GREEN__ "green" __C_RESET__ " \treset\n");
+  printf(__C_RED__ "red" __C_RESET__ " \treset\n");
+  printf(__C_YELLOW__ "yellow" __C_RESET__ " \treset\n");
+  printf(__C_BLUE__ "blue" __C_RESET__ " \treset\n");
+  printf(__C_MAGENTA__ "magenta" __C_RESET__ " \treset\n");
+  printf(__C_CYAN__ "cyan" __C_RESET__ " \treset\n");
   return 0;
-
 }

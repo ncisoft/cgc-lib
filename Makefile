@@ -1,6 +1,6 @@
 .PHONY : build help build-v init build-clang build-gcc rebuild release clean clean-fake 
 .PHONY : run gdb ldd  clang-test func-test
-.PHONY : compile compile-v  tags lua-test clang-test
+.PHONY : compile compile-v  tags lua-test clang-test uuid
 
 build: compile tags
 #	cd build && ninja -v && pwd && cd .. && ctags src/*.cc include/*.h*
@@ -15,6 +15,11 @@ compile-v:
 
 tags: 
 	ctags  src/*.c test/*.c include/*.h*
+
+uuid:
+	@echo generate uuid ...
+	@cat /proc/sys/kernel/random/uuid | sed 's/-/_/g' | \
+	awk '{print "UUID_",toupper($$0)}' |  sed 's/ //g'
 
 test:
 	cd build && ninja test && pwd && cd .. && anjuta-tags src/*.c include/*.h*
