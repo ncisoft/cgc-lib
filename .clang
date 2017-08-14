@@ -1,1 +1,1 @@
--I./contrib/lua51-ext/
+-I./contrib/lua51-ext/ -I./include/

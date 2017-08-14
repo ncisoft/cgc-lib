@@ -42,8 +42,9 @@ extern "C"
 
   extern void *gc_malloc(gc_root_t *proot, size_t sz);
   extern void *gc_malloc_with_gc(gc_root_t *proot, size_t sz, fobj_gc _gc);
-  extern void gc_mark_ref(void *source_ptr, void *ddest_ptr);
-  extern void gc_mark_unref(void *source_ptr, void *ddest_ptr);
+  extern void gc_mark_ref(void *source_ptr, void *dest_ptr);
+  extern void gc_mark_ref_with_one2many(void *source_ptr, void *dest_ptr);
+  extern void gc_mark_unref(void *source_ptr, void *dest_ptr);
   extern void gc_collect();
 
 
@@ -75,7 +76,7 @@ extern "C"
 #define xgc_info(__fmt, ...)     GC_LOG(GC_LOGLEVEL_INFO, "INFO", __C_YELLOW__,  __fmt, ##__VA_ARGS__)
 #define xgc_warn(__fmt, ...)     GC_LOG(GC_LOGLEVEL_WARNING, "WARN", __C_CYAN__,  __fmt, ##__VA_ARGS__)
 #define xgc_error(__fmt, ...)     GC_LOG(GC_LOGLEVEL_ERROR, "ERROR", __C_RED__,  __fmt, ##__VA_ARGS__)
-#define xgc_fatal(__fmt, ...)     GC_LOG(GC_LOGLEVEL_ERROR, "FATAL", __C_RED__,  __fmt, ##__VA_ARGS__)
+#define xgc_fatal(__fmt, ...)     GC_LOG(GC_LOGLEVEL_ERROR, "FATAL", __C_YELLOW__,  __fmt, ##__VA_ARGS__)
 
 #define xgc_assert(expr)  { if (!(expr)) { xgc_print_stacktrace(__FILE__,  __LINE__); assert(expr); } } 
 

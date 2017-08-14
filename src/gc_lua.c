@@ -17,6 +17,9 @@ typedef struct {
 #define MT_ROOT "__mt_root"
 #define MT_MANAGED_OBJ "__mt_managed_ob"
 
+#define luat_true 1
+#define luat_false 0
+
 enum {
   MASK_NONE = 0,
   MASK_INITIAL_CLOSED = 1,
@@ -53,7 +56,9 @@ void xgc_print_stacktrace(char *fname, int lineno)
     char ** stacktrace = backtrace_symbols(array, stack_num);
     for (int i = 0; i < stack_num; ++i)
     {
+        printf(__C_MAGENTA__);
         printf("\t%s\n", stacktrace[i]);
+        printf(__C_RESET__);
     }
     free(stacktrace);
     //xgc_println();
@@ -98,14 +103,14 @@ gc_heap_t  *gc_heap_t_init()
 int __root_gc(lua_State* L) 
 {
   gc_root_t *proot = cast(gc_root_t *, lua_touserdata(L, -1));
-  xgc_info("gc_root was released %p\n", proot);
+  xgc_debug("release gc_root=%p func=%s\n", proot, proot->my_function_name);
   return 0;
 }
 
 int __obj_gc(lua_State* L) 
 {
   xgc_obj_t *xobj = cast(xgc_obj_t *, lua_touserdata(L, -1));
-  xgc_info("  release _p=%p, xobj=%p\n", xobj+1,xobj);
+  xgc_debug("  release _p=%p, xobj=%p\n", xobj+1,xobj);
   if (xobj->_gc)
     xobj->_gc(xobj->p);
   return 0;
@@ -259,7 +264,7 @@ extern void *gc_malloc_with_gc(gc_root_t *proot, size_t sz, fobj_gc _gc)
   return obj->p;
 }
 
-extern void gc_mark_ref(void *source_ptr, void *dest_ptr)
+static void xgc_mark_ref_with_params(void *source_ptr, void *dest_ptr, bool is_one2many)
 {
   gc_heap_t *pgch =  gc_heap_t_init();
   lua_State* L = pgch->L;
@@ -290,7 +295,7 @@ step02: // set _G.K_ALIVEROOT_MAP[sp.proot].sp={}
       lua_rawget(L, -2);
       xgc_assert (!lua_isnil(L, -1));
       // stack layout:  _G.K_ALIVEROOT_MAP[sp->proot] as {}, _G.K_ALIVEROOT_MAP[sp->proot].sp as {}?
-      if (!lua_istable(L, -1))
+      if (!lua_istable(L, -1) || !is_one2many)
 	{
 	  lua_pop(L, 1);
 	  // stack layout:  _G.K_ALIVEROOT_MAP[sp->proot] as {}
@@ -298,11 +303,11 @@ step02: // set _G.K_ALIVEROOT_MAP[sp.proot].sp={}
 	  xgc_pushuserdata(L, sp);
 	  lua_newtable(L);
 	  lua_rawset(L, -3);
-	  // stack layout:  _G.K_ALIVEROOT_MAP[sp->proot][sp->proot] 
+	  // stack layout:  _G.K_ALIVEROOT_MAP[sp->proot] as {}
 	  xgc_assert(_top+1 == lua_gettop(L));
 	  xgc_pushuserdata(L, sp);
 	  lua_rawget(L, -2);
-	  // stack layout: _G.K_ALIVEROOT_MAP[sp->proot][sp->proot] as {},  _G.K_ALIVEROOT_MAP[sp->proot][sp->proot][sp] as {}, 
+	  // stack layout: _G.K_ALIVEROOT_MAP[sp->proot] as {},  _G.K_ALIVEROOT_MAP[sp->proot][sp] as {}, 
 	  xgc_assert(_top+2 == lua_gettop(L));
 	  lua_remove(L, -2);
 	  // stack layout: _G.K_ALIVEROOT_MAP[sp->proot][sp->proot][sp] as {}, 
@@ -310,22 +315,78 @@ step02: // set _G.K_ALIVEROOT_MAP[sp.proot].sp={}
 	}
     }
 
-step03: // set ref: _G.K_ALIVEROOT_MAP[sp->proot].sp[dp] = 1
+step03: // set ref: _G.K_ALIVEROOT_MAP[sp->proot].sp[dp] = true
 
     {
       // stack layout:  _G.K_ALIVEROOT_MAP[sp->proot].sp as {}
       xgc_assert(_top+1 == lua_gettop(L));
       xgc_pushuserdata(L, dp);
-      lua_pushboolean(L, true);
+      lua_pushboolean(L, luat_true);
       lua_rawset(L, -3);
       lua_pop(L, 1);
       xgc_assert(_top+0 == lua_gettop(L));
     }
 }
 
-extern void gc_mark_unref(void *source_ptr, void *ddest_ptr)
+void gc_mark_ref(void *source_ptr, void *dest_ptr)
 {
+  xgc_mark_ref_with_params(source_ptr, dest_ptr, false);
+}
 
+void gc_mark_ref_with_one2many(void *source_ptr, void *dest_ptr)
+{
+  xgc_mark_ref_with_params(source_ptr, dest_ptr, true);
+}
+
+extern void gc_mark_unref(void *source_ptr, void *dest_ptr)
+{
+  gc_heap_t *pgch =  gc_heap_t_init();
+  lua_State* L = pgch->L;
+  int _top = lua_gettop(L);
+  xgc_obj_t *sp = cast(xgc_obj_t*, source_ptr)-1;
+  xgc_obj_t *dp = cast(xgc_obj_t*, source_ptr)-1;
+
+step01: // get _G.K_ALIVEROOT_MAP[sp.proot] as {} 
+    {
+      lua_getglobal(L, K_ALIVEROOT_MAP);
+      xgc_pushuserdata(L, sp->proot);
+      xgc_assert( lua_isuserdata(L, -1) );
+      lua_rawget(L, -2);
+      xgc_debug("\t top = %d, proot=%p\n", lua_gettop(L), sp->proot);
+      xgc_assert( lua_istable(L, -1) );
+      // stack layout:  _G.K_ALIVEROOT_MAP _G.K_ALIVEROOT_MAP[sp->proot] as {}
+      lua_remove(L, -2);
+      // stack layout:  _G.K_ALIVEROOT_MAP[sp->proot] as {}
+      xgc_assert(_top+1 == lua_gettop(L));
+    }
+
+step02: // set _G.K_ALIVEROOT_MAP[sp.proot].sp={}
+    {
+      // stack layout:  _G.K_ALIVEROOT_MAP[sp.proot] as {}
+      xgc_assert(_top+1 == lua_gettop(L));
+
+      xgc_pushuserdata(L, sp);
+      lua_rawget(L, -2);
+      xgc_assert (!lua_isnil(L, -1));
+      // stack layout:  _G.K_ALIVEROOT_MAP[sp->proot] as {}, _G.K_ALIVEROOT_MAP[sp->proot].sp as {}?
+      if (lua_istable(L, -1))
+	{
+	  lua_remove(L, -2);
+	  // stack layout:  _G.K_ALIVEROOT_MAP[sp->proot].sp as {}
+	  xgc_assert(_top+1 == lua_gettop(L));
+	  xgc_pushuserdata(L, dp);
+	  lua_pushnil(L);
+	  lua_rawset(L, -3);
+	  lua_pop(L, 1);
+	  xgc_assert(_top+0 == lua_gettop(L));
+	}
+      else
+	{
+	  // stack layout:  _G.K_ALIVEROOT_MAP[sp.proot] as {}, _G.K_ALIVEROOT_MAP[sp.proot].[sp]
+	  lua_pop(L, 2);
+	  xgc_assert(_top+0 == lua_gettop(L));
+	}
+    }
 }
 
 void gc_collect()
@@ -349,12 +410,10 @@ void gc_collect()
 	  lua_rawset(L, -3);
 	  xgc_assert(_top+1 == lua_gettop(L));
 	  nCollected++;
-	  
 	}
       else
 	{
 	  prev = proot;
-
 	}
     }
   lua_pop(L, 1);
