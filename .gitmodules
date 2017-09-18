@@ -4,3 +4,6 @@
 [submodule "contrib/micoro"]
 	path = contrib/micoro
 	url = https://github.com/mikewei/micoro.git
+[submodule "contrib/libev"]
+	path = contrib/libev
+	url = https://github.com/enki/libev.git
