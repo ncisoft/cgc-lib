@@ -1,0 +1,6 @@
+[submodule "contrib/libcork"]
+	path = contrib/libcork
+	url = https://github.com/shadowsocks/libcork.git
+[submodule "contrib/micoro"]
+	path = contrib/micoro
+	url = https://github.com/mikewei/micoro.git
