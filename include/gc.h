@@ -55,6 +55,10 @@ extern "C"
 #define cast(type, expr) ((type)(expr))
 #endif
 
+#ifndef sizeof_uint
+# define sizeof_uint(type) cast(unsigned int, sizeof(type))
+#endif
+
 #define GC_LOGLEVEL_DEBUG       7
 #define GC_LOGLEVEL_INFO        6
 #define GC_LOGLEVEL_WARNING     5

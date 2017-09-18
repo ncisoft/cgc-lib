@@ -25,6 +25,15 @@ executable('clang-test', clangtest_source,
 		link_args :  ['-rdynamic'],
 		dependencies : [gc_dep, lua, luaext_dep ])
 
+setjumptest_source = files(
+    'setjump-test.c')
+
+
+executable('setjump-test', setjumptest_source,
+		include_directories : inc,
+		link_args :  ['-rdynamic'],
+		dependencies : [gc_dep, lua, luaext_dep ])
+
 
 
 

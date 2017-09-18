@@ -21,7 +21,7 @@ void obj_gc(void *p)
 {
   int index = atoi( cast(const char *, p) );
   xmask_set( index, false );
-  xgc_info("**release obj= %s, p=%p\n", p, p);
+  xgc_info("**release obj= %s, p=%p\n", cast(char*, p), p);
 }
 
 void* obj_new(gc_root_t *proot, int id)
@@ -84,7 +84,7 @@ void testcase_0D()
 
 void *test_0C_01()
 {
-  gc_root_t *proot= gc_root_new();
+  gc_root_t *proot= gc_root_new_with_complex_return();
   void *p10 = obj_new(proot, 10);
   return p10;
 }
@@ -128,7 +128,7 @@ void testcase_0A()
 {
   gc_root_t *proot= gc_root_new();
   xgc_debug("proot=%p\n", proot);
-  xgc_debug("sizeof(int)=%d, sizeof(void *)=%d\n", sizeof(int), sizeof(void *));
+  xgc_debug("sizeof(int)=%lu, sizeof(void *)=%lu\n", sizeof(int), sizeof(void *));
     {
 
   void *p1 = obj_new(proot, 1);
