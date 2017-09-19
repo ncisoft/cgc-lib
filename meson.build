@@ -24,3 +24,4 @@ subdir('test')
 if get_option('enable_examples')
     subdir('examples')
 endif
+message( 'here' )

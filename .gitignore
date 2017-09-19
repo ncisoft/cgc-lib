@@ -29,3 +29,6 @@ tags
 *.out
 *.app
 build/*
+
+# Misc
+.phony_target
