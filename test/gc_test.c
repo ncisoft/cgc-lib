@@ -128,7 +128,7 @@ void testcase_0A()
 {
   gc_root_t *proot= gc_root_new();
   xgc_debug("proot=%p\n", proot);
-  xgc_debug("sizeof(int)=%lu, sizeof(void *)=%lu\n", sizeof(int), sizeof(void *));
+  xgc_debug("sizeof(int)=%u, sizeof(void *)=%u\n", sizeof_uint(int), sizeof_uint(void *));
     {
 
   void *p1 = obj_new(proot, 1);
