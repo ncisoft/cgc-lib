@@ -29,10 +29,10 @@ setjumptest_source = files(
     'setjump-test.c')
 
 
-executable('setjump-test', setjumptest_source,
+executable('setjump-test', 'setjump-test.c',
 		include_directories : inc,
 		link_args :  ['-rdynamic'],
-		dependencies : [gc_dep, lua, luaext_dep ])
+		dependencies : [gc_dep, lua, luaext_dep, libev_dep, cork_dep ])
 
 
 

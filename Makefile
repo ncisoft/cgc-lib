@@ -2,17 +2,20 @@
 .PHONY : run gdb xinit ldd  clang-test func-test
 .PHONY : compile compile-v  tags lua-test clang-test uuid
 
+git-dir := $(shell git rev-parse --show-toplevel | tr -d '\n')
+
 build: xinit compile tags
-#	cd build && ninja -v && pwd && cd .. && ctags src/*.cc include/*.h*
+#	cd build && ninja -v && cd .. && ctags src/*.cc include/*.h*
 
 build-v: compile-v tags 
 
-compile:
-	cd build && ninja -v && cd .. && pwd
+compile: 
+	cd build && ninja -v && cd .. 
+#	cd ${git-dir}
 
 xinit:
 	mkdir -p build
-	./bin/sync-wrapper.sh
+	./bin/wrapper-init.sh
 	./bin/sync-wrapper.sh
 
 compile-v:
@@ -29,14 +32,14 @@ uuid:
 test:
 	cd build && ninja test && pwd && cd .. && anjuta-tags src/*.c include/*.h*
 
-rebuild: xinit clean-fake
+rebuild:  clean-fake
 	cd build && ninja -v && pwd && cd .. && anjuta-tags src/*.c include/*.h*
 
-build-clang: xinit
+build-clang: 
 	rm -rf build/* tags && cd build && CC=clang CXX=clang++ meson .. && cd ..
 	cd build && ninja -v && pwd && cd .. && anjuta-tags src/*.c include/*.h*
 
-build-gcc: xinit
+build-gcc: 
 	rm -rf build/* tags && cd build && CC=gcc CXX=g++ meson .. && cd ..
 	cd build && ninja -v && pwd && cd .. && anjuta-tags src/*.c include/*.h*
 

@@ -5,10 +5,14 @@ project('ansic-gc', 'c', 'cpp', default_options : ['c_std=c99', 'cpp_std=c++11']
 
 api_version = '0.1'
 
+# c_args
+# cpp_args
+# link_args
+# 
 
-add_global_arguments('-Wno-unused-label', language : 'c')
-#add_global_arguments('-fcolor-diagnostics, -DCORK_API=CORK_EXPORT', language : 'c')
-# add_global_arguments('-Wall', language : 'cpp')
+add_global_arguments(['-Wno-unused-label', '-fcolor-diagnostics'], language : 'c')
+#c_args = ['-Wno-unused-label', '-fcolor-diagnostics', '-DCORK_API=CORK_EXPORT']
+add_global_arguments('-Wall', language : 'cpp')
 cxx_args = ['-fcolor-diagnostics']
 xlink_args = ['-rdynamic','-ldw']
 
@@ -19,6 +23,7 @@ thread_dep = dependency('threads')
 
 subdir('contrib/lua51-ext')
 subdir('contrib/libcork')
+subdir('contrib/libev')
 subdir('src')
 subdir('test')
 if get_option('enable_examples')

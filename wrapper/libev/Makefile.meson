@@ -1,0 +1,5 @@
+all: xdone
+
+xdone:  Makefile.meson meson.build
+	./configure && make -j3 && touch xdone
+
