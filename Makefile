@@ -36,11 +36,12 @@ rebuild:  clean-fake
 	cd build && ninja -v && pwd && cd .. && anjuta-tags src/*.c include/*.h*
 
 build-clang: 
-	rm -rf build/* tags && cd build && CC=clang CXX=clang++ meson .. && cd ..
+	rm -f build/* tags && cd build && CC=clang CXX=clang++ meson .. && cd ..
+	cd ${git-dir}
 	cd build && ninja -v && pwd && cd .. && anjuta-tags src/*.c include/*.h*
 
 build-gcc: 
-	rm -rf build/* tags && cd build && CC=gcc CXX=g++ meson .. && cd ..
+	rm -f build/* tags && cd build && CC=gcc CXX=g++ meson .. && cd ..
 	cd build && ninja -v && pwd && cd .. && anjuta-tags src/*.c include/*.h*
 
 init: build-clang
