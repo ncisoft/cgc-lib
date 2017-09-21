@@ -18,6 +18,7 @@ submodule_s=$( git submodule status  contrib/libcork | sed -e "s/^\-.*$/\-/")
 if test "$submodule_s" = "-"  
 then
 	git submodule update --init --recursive
+	find wrapper/ -name "*.*" |xargs touch
 else
 	echo "submodule has been updated"
 fi
