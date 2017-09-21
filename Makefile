@@ -16,7 +16,7 @@ compile:
 xinit:
 	mkdir -p build
 	./bin/wrapper-init.sh
-	./bin/sync-wrapper.sh
+	./bin/wrapper-sync.sh
 
 compile-v:
 	cd build && ninja -v && cd .. && pwd
