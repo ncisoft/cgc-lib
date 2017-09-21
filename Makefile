@@ -4,7 +4,7 @@
 
 git-dir := $(shell git rev-parse --show-toplevel | tr -d '\n')
 
-build: xinit compile tags
+build: compile tags
 #	cd build && ninja -v && cd .. && ctags src/*.cc include/*.h*
 
 build-v: compile-v tags 
@@ -36,12 +36,12 @@ rebuild:  clean-fake
 	cd build && ninja -v && pwd && cd .. && anjuta-tags src/*.c include/*.h*
 
 build-clang: 
-	rm -f build/* tags && cd build && CC=clang CXX=clang++ meson .. && cd ..
+	rm -f build/*.* tags && cd build && CC=clang CXX=clang++ meson .. && cd ..
 	cd ${git-dir}
 	cd build && ninja -v && pwd && cd .. && anjuta-tags src/*.c include/*.h*
 
 build-gcc: 
-	rm -f build/* tags && cd build && CC=gcc CXX=g++ meson .. && cd ..
+	rm -f build/*.* tags && cd build && CC=gcc CXX=g++ meson .. && cd ..
 	cd build && ninja -v && pwd && cd .. && anjuta-tags src/*.c include/*.h*
 
 init: build-clang
