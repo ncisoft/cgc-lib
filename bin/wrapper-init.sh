@@ -26,7 +26,7 @@ cd $git_dir
 mkdir -p build
 mkdir -p build/libs
 
-./bin/sync-wrapper.sh 
+./bin/wrapper-sync.sh  
 
 build_submodule "libcork"
 build_submodule "libev"
