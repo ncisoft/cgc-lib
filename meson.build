@@ -10,10 +10,18 @@ api_version = '0.1'
 # link_args
 # 
 
-add_global_arguments(['-Wno-unused-label', '-fcolor-diagnostics'], language : 'c')
+compiler = meson.get_compiler('c')
+
+if compiler.get_id() == 'gcc'
+	add_global_arguments(['-Wno-unused-label', '-DCORK_API=CORK_EXPORT'], language : 'c')
+endif
+if  compiler.get_id() == 'clang'
+	add_global_arguments(['-Wno-unused-label', '-fcolor-diagnostics', '-DCORK_API=CORK_EXPORT'], language : 'c')
+endif
+
 #c_args = ['-Wno-unused-label', '-fcolor-diagnostics', '-DCORK_API=CORK_EXPORT']
 add_global_arguments('-Wall', language : 'cpp')
-cxx_args = ['-fcolor-diagnostics']
+#cxx_args = ['-fcolor-diagnostics']
 xlink_args = ['-rdynamic','-ldw']
 
 inc = include_directories(['./include'])

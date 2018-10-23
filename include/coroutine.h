@@ -16,7 +16,7 @@ extern "C"
   typedef void (*coroutine_fn)();
 # if __WORDSIZE == 64
   typedef uint64_t  __jmp_buf_reg_t;
-#warning "__WORDSIZE == 64, using uint64_t"
+//#warning "__WORDSIZE == 64, using uint64_t"
 
 # elif __WORDSIZE == 32
   typedef uint32_t __jmp_buf_reg_t;

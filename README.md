@@ -1,5 +1,6 @@
 # cgc-lib
 
+
 ansi c (c99) compatible GC implementation, based upon lua's GC facility
 
 Build tools:
@@ -8,6 +9,7 @@ Build tools:
 
 Libaries:
 * sudo apt-get install lua5.1
+* sudo apt-get liblua5.1-0-dev
 * sudo apt-get install libjemalloc-dev
 
 Run Testcase:

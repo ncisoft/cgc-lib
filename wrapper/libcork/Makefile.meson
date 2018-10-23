@@ -2,5 +2,5 @@ all: xdone
 
 xdone: meson.build version.sh
 	mkdir -p build
-	cd build && cmake .. && make -j3 && cd .. && touch xdone
+	cd build && cmake .. && make -j3 libcork-static && cd .. && touch xdone
 
