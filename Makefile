@@ -19,7 +19,8 @@ compile: xinit
 	#	cd ${git-dir}
 
 xinit:
-	test ! -f .xinit_done || \
+	test  -f .xinit_done || \
+		echo "xinit ..." &&  \
 		mkdir -p build && \
 		./bin/wrapper-init.sh && \
 		./bin/wrapper-sync.sh && \
