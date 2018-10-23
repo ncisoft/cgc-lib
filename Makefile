@@ -11,15 +11,11 @@ build: compile tags
 build-v: compile-v tags 
 
 compile: xinit
-	rm -f build/*.* build/.ninja_* tags && \
-		rm -rf build/menson-logs build/meson-private build/contrib uild/src build/test && \
-		cd build && \
-		CC=clang CXX=clang++ meson .. && \
-		ninja -v && cd .. 
+		cd build && ninja -v && cd .. 
 	#	cd ${git-dir}
 
 xinit:
-	test  -f .xinit_done || \
+	test -f .xinit_done || (\
 		echo "xinit ..." &&  \
 		mkdir -p build && \
 		./bin/wrapper-init.sh && \
@@ -27,7 +23,7 @@ xinit:
 		cd build && \
 		CC=clang CXX=clang++ meson -Db_lundef=false .. && \
 		cd .. && \
-		touch .xinit_done
+		touch .xinit_done )
 
 compile-v:
 	cd build && ninja -v && cd .. && pwd
