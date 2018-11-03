@@ -8,3 +8,6 @@
 [submodule "contrib/libev"]
 	path = contrib/libev
 	url = https://github.com/enki/libev.git
+[submodule "contrib/pt"]
+	path = contrib/pt
+	url = https://github.com/zserge/pt.git
