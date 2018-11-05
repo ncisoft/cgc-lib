@@ -100,6 +100,12 @@ gc_heap_t  *gc_heap_t_init()
   return pgch;
 }
 
+void gc_root_close(gc_root_t **pproot)
+{
+  gc_root_t *proot = *pproot;
+
+}
+
 int __root_gc(lua_State* L) 
 {
   gc_root_t *proot = cast(gc_root_t *, lua_touserdata(L, -1));
@@ -150,6 +156,7 @@ gc_root_t *gc_root_new_with_param(bool  is_primitive,
       strncpy( proot->my_parent_function_name, parent_func_name, sizeof(proot->my_parent_function_name));
       proot->is_primitive = is_primitive;
       proot->next = __gc_roots.next;
+      proot->iLoop = 0;
       __gc_roots.next = proot;
       
       xgc_assert ( lua_isuserdata(pgch->L, -1) ); 

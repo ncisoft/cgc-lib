@@ -1,7 +1,10 @@
 "let g:EasyGrepFilesToExclude = "*.bak,*~,cscope.*,*.a,*.o,*.pyc,*.bak,*.c, build/*,tags"
 let g:EasyGrepFilesToExclude=".git,build,tags,*.bak,*.o,*.s"
-let g:EasyGrepRoot = "search:.git"
+let g:EasyGrepRoot = "repository"
 set wildignore=*.swp,.gitignore
+let g:EasyGrepPerlStyle=1
+let g:EasyGrepCommand=1
+let g:EasyGrepRecursive=1
 "https://gist.github.com/seyDoggy/613f2648cebc6c7b456f
 unlet g:ctrlp_custom_ignore
 unlet g:ctrlp_user_command
@@ -50,5 +53,6 @@ let g:clang_use_library=1
 let g:diminactive_use_colorcolumn = 0
 let g:ctrlp_clear_cache_on_exit = 1
 let g:tagbar_ctags_bin = "ctags"
+let g:ycm_global_ycm_extra_conf=g:git_dir . '/.ycm_extra_conf.py'
 
 set directory=$HOME/tmp/dirty

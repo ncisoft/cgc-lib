@@ -29,6 +29,7 @@ extern "C"
 
   typedef struct _gc_root_t {
     struct _gc_root_t *next;
+    int iLoop;
     bool is_primitive;
     char my_function_name[128];
     char my_parent_function_name[128];
@@ -39,6 +40,7 @@ extern "C"
 
   extern gc_root_t *gc_root_new();
   extern gc_root_t *gc_root_new_with_complex_return();
+  extern void gc_root_close(gc_root_t **pproot);
 
   extern void *gc_malloc(gc_root_t *proot, size_t sz);
   extern void *gc_malloc_with_gc(gc_root_t *proot, size_t sz, fobj_gc _gc);
@@ -50,6 +52,15 @@ extern "C"
 
   extern void xgc_print_stacktrace(char *fname, int lineno);
 
+#ifndef __GNUC__
+#error   RAII For c  support gcc only
+#endif
+
+#define using_raii_proot() \
+  for ( __attribute__((cleanup (gc_root_close))) gc_root_t *proot = gc_root_new(); proot->iLoop < 1; proot->iLoop++  )
+
+#define using_raii_proot_complex_return() \
+  for ( __attribute__((cleanup (gc_root_close))) gc_root_t *proot = gc_root_new_with_complex_return(); proot->iLoop < 1; proot->iLoop++  )
 
 #ifndef cast
 #define cast(type, expr) ((type)(expr))
