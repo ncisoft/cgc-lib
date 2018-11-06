@@ -5,7 +5,7 @@ ansi c (c99) compatible GC implementation, based upon lua's GC facility
 
 Build tools:
 * [Meson](http://mesonbuild.com/)
-* [(Ninja]([https://ninja-build.org/)
+* [Ninja]([https://ninja-build.org/)
 
 Libaries:
 * sudo apt-get install lua5.1
@@ -22,4 +22,5 @@ precondition:
 You are able to check whether the code is conflict with using_raii_proot | using_raii_proot_complex_return by installing a patched
 [luaclang-parser](https://github.com/ncisoft/luaclang-parser)
 run `make check_gc_root_new' to see what happens
+
 
