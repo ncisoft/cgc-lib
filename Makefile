@@ -1,6 +1,6 @@
 .PHONY : build help build-v init build-clean build-clang build-gcc rebuild release clean clean-fake 
 .PHONY : run gdb xinit ldd  clang-test func-test
-.PHONY : compile compile-v  tags lua-test clang-test uuid
+.PHONY : compile compile-v  tags lua-test clang-test uuid check_gc_root_new
 .PHONY : xinit
 
 git-dir := $(shell git rev-parse --show-toplevel | tr -d '\n')
@@ -8,10 +8,10 @@ git-dir := $(shell git rev-parse --show-toplevel | tr -d '\n')
 build: compile tags
 	#	cd build && ninja -v && cd .. && ctags src/*.cc include/*.h*
 
-build-v: compile-v tags 
+build-v: compile-v tags
 
 compile: xinit
-		cd build && ninja -v && cd .. 
+		cd build && ninja -v && cd ..
 	#	cd ${git-dir}
 
 xinit:
@@ -28,7 +28,7 @@ xinit:
 compile-v:
 	cd build && ninja -v && cd .. && pwd
 
-tags: 
+tags:
 	ctags  src/*.c test/*.c include/*.h*
 
 uuid:
@@ -67,7 +67,7 @@ release:
 
 help:
 	@echo "make [ build | build-v | init | build-clang | build-gcc | rebuild | clang-test | "
-	@echo "       release |  clean | clean-fake | run | gdb | ldd | help ]\n"
+	@echo "       release |  clean | clean-fake | run | gdb | ldd | check_gc_root_new | help ]\n"
 
 clean:
 	rm -rf build/* tags .xinit_done && \
@@ -105,4 +105,8 @@ ldd: build
 
 func-test: build
 	./build/src/func-test
+
+check_gc_root_new: build
+	lua51 ./src/check_gc_root_new.lua  ./test/gc_test01.c -I./include/ -I/usr/lib/llvm-3.8/lib/clang/3.8.1/include/
+	@echo lua51 ./src/check_gc_root_new.lua  ./test/gc_test01.c -I./include/ -I/usr/lib/llvm-3.8/lib/clang/3.8.1/include/
 
