@@ -32,3 +32,5 @@ build/*
 
 # Misc
 .phony_target
+.xinit_done
+.xopt/*

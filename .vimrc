@@ -39,7 +39,7 @@ function! FakeFunc_168ADAC3_8971_470F_9743_8B166777A86B()
   let g:syntastic_cpp_include_dirs=[ g:git_dir . '/include/',  '/usr/include/c++/4.9', '/usr/include/i386-linux-gnu/c++/4.9',  g:git_dir . '/contrib/call_in_stack/']
 
   let g:syntastic_c_compiler="clang"
-  let g:syntastic_c_compiler_options =" -std=c99 "
+  let g:syntastic_c_compiler_options =" -std=gnuj99 "
   let g:syntastic_c_include_dirs=[ g:git_dir . '/include/', '/usr/include/lua5.1', g:git_dir . '/contrib/lua51-ext/',  g:git_dir . '/contrib/call_in_stack/']
 
   " https://superuser.com/questions/77800/vims-autocomplete-how-to-prevent-vim-to-read-some-include-files
@@ -61,3 +61,15 @@ let g:ycm_global_ycm_extra_conf=g:git_dir . '/.ycm_extra_conf.py'
 
 nmap <leader><space> :FixWhitespace<cr>
 set directory=$HOME/tmp/dirty
+
+let g:ale_c_incs = [
+      \ '.',
+      \ g:git_dir . '/src/',
+      \ g:git_dir . '/include/',
+      \ g:git_dir . '/utils/',
+      \ g:git_dir . '/.xopt/include',
+      \ '.xopt/include',
+      \ 'contrib/lua51-ext',
+      \ '/usr/include/lua5.1'
+      \]
+call SetupC99Incs()

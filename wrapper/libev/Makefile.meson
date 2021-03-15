@@ -1,5 +1,13 @@
 all: xdone
 
-xdone:  Makefile.meson meson.build
-	./configure && make -j3 && touch xdone
+git-dir := $(shell realpath ../.. | tr -d '\n')
+nproc := $(shell nproc)
+
+xdone: Makefile.meson meson.build
+	true &&                                      \
+		mkdir -p ${git-dir}/.xopt &&             \
+		./configure --prefix=${git-dir}/.xopt && \
+		make -j${nproc} &&                       \
+		make install &&                          \
+		touch xdone
 

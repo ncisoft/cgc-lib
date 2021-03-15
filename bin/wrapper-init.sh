@@ -26,12 +26,17 @@ cd $git_dir
 mkdir -p build
 mkdir -p build/libs
 
-./bin/wrapper-sync.sh  
+./bin/wrapper-sync.sh
 
 build_submodule "libcork"
 build_submodule "libev"
+build_submodule "logger"
 
 cd $git_dir
 find ./contrib/ -name "*.a" -exec cp --verbose --update {} build/libs/ \;
+
+set -ex
+mkdir -p .xopt/include && \
+  cp contrib/logger/logger.h .xopt/include/
 
 popd

@@ -20,7 +20,7 @@ extern "C"
 
   /**
    * garbdge collection path:
-   *   root -> {malloced_obj} 
+   *   root -> {malloced_obj}
    *   malloced_object -> {ref_object}
    * when root was expired
    *   set root -> nil
@@ -44,6 +44,10 @@ extern "C"
 
   extern void *gc_malloc(gc_root_t *proot, size_t sz);
   extern void *gc_malloc_with_gc(gc_root_t *proot, size_t sz, fobj_gc _gc);
+
+  extern void *gc_checkin(gc_root_t *proot, void *dest, void *src);
+  extern void *gc_checkout(gc_root_t *proot, void *dest, void *src);
+
   extern void gc_mark_ref(void *source_ptr, void *dest_ptr);
   extern void gc_mark_ref_with_one2many(void *source_ptr, void *dest_ptr);
   extern void gc_mark_unref(void *source_ptr, void *dest_ptr);
@@ -93,7 +97,7 @@ extern "C"
 #define xgc_error(__fmt, ...)     GC_LOG(GC_LOGLEVEL_ERROR, "ERROR", __C_RED__,  __fmt, ##__VA_ARGS__)
 #define xgc_fatal(__fmt, ...)     GC_LOG(GC_LOGLEVEL_ERROR, "FATAL", __C_YELLOW__,  __fmt, ##__VA_ARGS__)
 
-#define xgc_assert(expr)  { if (!(expr)) { xgc_print_stacktrace(__FILE__,  __LINE__); assert(expr); } } 
+#define xgc_assert(expr)  { if (!(expr)) { xgc_print_stacktrace(__FILE__,  __LINE__); assert(expr); } }
 
 #define xgc_println() fprintf(stderr, "\n");
 

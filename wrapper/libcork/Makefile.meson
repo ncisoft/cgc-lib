@@ -1,6 +1,16 @@
 all: xdone
 
+git-dir := $(realpath ../.. | tr -d '\n')
+nproc := $(shell nproc)
+
 xdone: meson.build version.sh
+	rm -rf build
 	mkdir -p build
-	cd build && cmake .. && make -j3 libcork-static && cd .. && touch xdone
+	mkdir -p ${git-dir}/.xopt
+	true &&                                                 \
+		cd build &&                                         \
+		cmake .. -DCMAKE_INSTALL_PREFIX=${git-dir}/.xopt && \
+		make libcork-static -j${nproc} &&                   \
+		make install &&                                     \
+		cd .. && touch xdone
 

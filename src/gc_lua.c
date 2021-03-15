@@ -40,7 +40,7 @@ static gc_root_t __gc_roots = { NULL };
 
 /*--------- static functions -------------*/
 static gc_heap_t *gc_heap_t_init();
-static gc_root_t *gc_root_new_with_param(bool  is_primitive, char *func_name, char *parent_func_name); 
+static gc_root_t *gc_root_new_with_param(bool  is_primitive, char *func_name, char *parent_func_name);
 static int __root_gc(lua_State* L);
 static int __obj_gc(lua_State* L);
 static gc_root_t *__get_my_function_by_backtrace(int iLevel, gc_root_t *self_proot);
@@ -106,14 +106,14 @@ void gc_root_close(gc_root_t **pproot)
 
 }
 
-int __root_gc(lua_State* L) 
+int __root_gc(lua_State* L)
 {
   gc_root_t *proot = cast(gc_root_t *, lua_touserdata(L, -1));
   xgc_debug("release gc_root=%p func=%s\n", proot, proot->my_function_name);
   return 0;
 }
 
-int __obj_gc(lua_State* L) 
+int __obj_gc(lua_State* L)
 {
   xgc_obj_t *xobj = cast(xgc_obj_t *, lua_touserdata(L, -1));
   xgc_debug("  release _p=%p, xobj=%p\n", xobj+1,xobj);
@@ -122,8 +122,8 @@ int __obj_gc(lua_State* L)
   return 0;
 }
 
-gc_root_t *gc_root_new_with_param(bool  is_primitive, 
-				  char *func_name, char *parent_func_name) 
+gc_root_t *gc_root_new_with_param(bool  is_primitive,
+				  char *func_name, char *parent_func_name)
 {
   gc_heap_t *pgch = gc_heap_t_init();
   lua_State *L = pgch->L;
@@ -158,12 +158,12 @@ gc_root_t *gc_root_new_with_param(bool  is_primitive,
       proot->next = __gc_roots.next;
       proot->iLoop = 0;
       __gc_roots.next = proot;
-      
-      xgc_assert ( lua_isuserdata(pgch->L, -1) ); 
+
+      xgc_assert ( lua_isuserdata(pgch->L, -1) );
       // stack layout: _G.K_ALIVEROOT_MAP proot
       xgc_assert( _top+2 == lua_gettop(L) );
       luaL_getmetatable(L, MT_ROOT);
-      xgc_assert ( lua_istable(pgch->L, -1) ); 
+      xgc_assert ( lua_istable(pgch->L, -1) );
       lua_setmetatable(L, -2);
       // stack layout: _G.K_ALIVEROOT_MAP proot
       xgc_assert( _top+2 == lua_gettop(L) );
@@ -177,10 +177,10 @@ gc_root_t *gc_root_new_with_param(bool  is_primitive,
       lua_newtable(pgch->L);
       // stack layout: _G.K_ALIVEROOT_MAP proot {}
       xgc_assert( _top+3 == lua_gettop(L) );
-      xgc_assert ( lua_istable(pgch->L, -1) ); 
-      xgc_assert ( lua_isuserdata(pgch->L, -2) ); 
-      xgc_assert ( lua_istable(pgch->L, -3) ); 
-      lua_rawset(pgch->L, -3);       
+      xgc_assert ( lua_istable(pgch->L, -1) );
+      xgc_assert ( lua_isuserdata(pgch->L, -2) );
+      xgc_assert ( lua_istable(pgch->L, -3) );
+      lua_rawset(pgch->L, -3);
       // stack layout: _G.K_ALIVEROOT_MAP
       xgc_assert( _top+1 == lua_gettop(L) );
       lua_pop(L, 1);
@@ -191,7 +191,7 @@ gc_root_t *gc_root_new_with_param(bool  is_primitive,
   return proot;
 
 }
-gc_root_t *gc_root_new() 
+gc_root_t *gc_root_new()
 {
   gc_root_t tmp_root = {NULL};
   gc_root_t *pfakeroot= __get_my_function_by_backtrace(2, &tmp_root);
@@ -201,7 +201,7 @@ gc_root_t *gc_root_new()
   return gc_root_new_with_param(true, pfakeroot->my_function_name, pfakeroot->my_parent_function_name);
 }
 
-gc_root_t *gc_root_new_with_complex_return() 
+gc_root_t *gc_root_new_with_complex_return()
 {
   gc_root_t tmp_root = {NULL};
   gc_root_t *pfakeroot= __get_my_function_by_backtrace(2, &tmp_root);
@@ -212,7 +212,7 @@ gc_root_t *gc_root_new_with_complex_return()
 
 }
 
-void *gc_malloc(gc_root_t *proot, size_t sz) 
+void *gc_malloc(gc_root_t *proot, size_t sz)
 {
   return gc_malloc_with_gc(proot, sz, NULL);
 }
@@ -254,7 +254,7 @@ extern void *gc_malloc_with_gc(gc_root_t *proot, size_t sz, fobj_gc _gc)
       lua_setmetatable(L, -2);
       xgc_assert(_top+3 == lua_gettop(L));
     }
-  // step(4): 
+  // step(4):
     {
       // stack layout[1]: __alive_root_map __alive_root_map[proot] xobj
       xgc_assert(_top+3 == lua_gettop(L));
@@ -279,7 +279,7 @@ static void xgc_mark_ref_with_params(void *source_ptr, void *dest_ptr, bool is_o
   xgc_obj_t *sp = cast(xgc_obj_t*, source_ptr)-1;
   xgc_obj_t *dp = cast(xgc_obj_t*, source_ptr)-1;
 
-step01: // get _G.K_ALIVEROOT_MAP[sp.proot] as {} 
+step01: // get _G.K_ALIVEROOT_MAP[sp.proot] as {}
     {
       lua_getglobal(L, K_ALIVEROOT_MAP);
       xgc_pushuserdata(L, sp->proot);
@@ -314,10 +314,10 @@ step02: // set _G.K_ALIVEROOT_MAP[sp.proot].sp={}
 	  xgc_assert(_top+1 == lua_gettop(L));
 	  xgc_pushuserdata(L, sp);
 	  lua_rawget(L, -2);
-	  // stack layout: _G.K_ALIVEROOT_MAP[sp->proot] as {},  _G.K_ALIVEROOT_MAP[sp->proot][sp] as {}, 
+	  // stack layout: _G.K_ALIVEROOT_MAP[sp->proot] as {},  _G.K_ALIVEROOT_MAP[sp->proot][sp] as {},
 	  xgc_assert(_top+2 == lua_gettop(L));
 	  lua_remove(L, -2);
-	  // stack layout: _G.K_ALIVEROOT_MAP[sp->proot][sp->proot][sp] as {}, 
+	  // stack layout: _G.K_ALIVEROOT_MAP[sp->proot][sp->proot][sp] as {},
 	  xgc_assert(_top+1 == lua_gettop(L));
 	}
     }
@@ -353,7 +353,7 @@ extern void gc_mark_unref(void *source_ptr, void *dest_ptr)
   xgc_obj_t *sp = cast(xgc_obj_t*, source_ptr)-1;
   xgc_obj_t *dp = cast(xgc_obj_t*, source_ptr)-1;
 
-step01: // get _G.K_ALIVEROOT_MAP[sp.proot] as {} 
+step01: // get _G.K_ALIVEROOT_MAP[sp.proot] as {}
     {
       lua_getglobal(L, K_ALIVEROOT_MAP);
       xgc_pushuserdata(L, sp->proot);
@@ -443,7 +443,7 @@ gc_root_t *__get_my_function_by_backtrace(int iLevel, gc_root_t *self_proot)
   char ** stacktrace = backtrace_symbols(array, stack_num);
   gc_root_t *proot = __gc_roots.next;
   gc_root_t *proot_parent = NULL;
-   
+
   xgc_debug("found my_function start ...\n");
 
     for (int i = 0; i < stack_num; ++i)
@@ -499,15 +499,15 @@ step03: // found parent proot, set neighbour proot which is primitive
 	  gc_root_t *xproot = __gc_roots.next;
 	  size_t sz = strlen(proot->my_function_name);
 	  proot->m_closed = MASK_INITIAL_CLOSED;
-	  //set subsequent child root to be closed; 
+	  //set subsequent child root to be closed;
 	  for (; xproot != NULL && xproot != proot; xproot = xproot->next)
 	    {
-	      if (xproot->m_closed != MASK_INITIAL_CLOSED && 
+	      if (xproot->m_closed != MASK_INITIAL_CLOSED &&
 		  !strncmp(xproot->my_parent_function_name, proot->my_function_name, sz))
 		{
 		  xproot->m_closed = MASK_SUBSEQUENT_CLOSED;
 		}
- 	    } 
+ 	    }
 	}
     }
 step200_exit:

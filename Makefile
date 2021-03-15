@@ -70,10 +70,12 @@ help:
 	@echo "       release |  clean | clean-fake | run | gdb | ldd | check_gc_root_new | help ]\n"
 
 clean:
-	rm -rf build/* tags .xinit_done && \
-		rm -rf ./contrib/libcork && \
-		rm -rf ./contrib/libev && \
-		rm -rf ./contrib/micoro
+	true &&                                \
+		rm -rf build/* tags .xinit_done && \
+		rm -rf ./contrib/libcork &&        \
+		rm -rf ./contrib/libev &&          \
+		rm -rf ./contrib/micoro &&         \
+		rm -rf ./.xopt
 
 
 clean-fake:

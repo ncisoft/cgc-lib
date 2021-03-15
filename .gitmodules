@@ -11,3 +11,6 @@
 [submodule "contrib/pt"]
 	path = contrib/pt
 	url = https://github.com/zserge/pt.git
+[submodule "contrib/logger"]
+	path = contrib/logger
+	url = https://github.com/shiffthq/logger.git
