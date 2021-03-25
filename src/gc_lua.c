@@ -7,6 +7,8 @@
 #include <string.h>
 #include <execinfo.h>
 #include <sys/types.h>
+#include <libcork/core.h>
+
 
 typedef struct {
   lua_State *L;
@@ -38,11 +40,18 @@ typedef struct calling_stack
   struct calling_stack *next;
 } calling_stack_t;
 
+#define CALLING_STACK_T_POOL_CAPACITY 100
 struct
 {
   bool inited;
   calling_stack_t calling_stack_root;
-}L = {.inited = false, .calling_stack_root.next=NULL};
+  struct  cork_mempool *calling_stack_t_pool;
+  int calling_stack_t_pool_capacity;
+}L = {
+    .inited = false,
+    .calling_stack_root.next=NULL,
+    .calling_stack_t_pool_capacity = CALLING_STACK_T_POOL_CAPACITY,
+};
 
 static void initL()
 {
@@ -50,6 +59,7 @@ static void initL()
     return;
   L.inited = true;
   L.calling_stack_root.next = NULL;
+  L.calling_stack_t_pool = cork_mempool_new_size_ex( sizeof(calling_stack_t), L.calling_stack_t_pool_capacity);
 }
 
 /*--------- static objects -------------*/
@@ -61,7 +71,7 @@ static gc_root_t __gc_roots = { NULL };
 static void push_calling_stack()
 {
   initL();
-  calling_stack_t *p = (calling_stack_t *)calloc(1, sizeof(calling_stack_t));
+  calling_stack_t *p = (calling_stack_t *)cork_mempool_new_object(L.calling_stack_t_pool);
   xgc_debug("calling_stack_t *p= %p\n", p);
   xgc_assert(p);
   p->next = L.calling_stack_root.next;
@@ -75,7 +85,7 @@ static void pop_calling_stack()
   calling_stack_t *p = L.calling_stack_root.next;
   xgc_assert(p);
   L.calling_stack_root.next = p->next;
-  free(p);
+  cork_mempool_free_object(L.calling_stack_t_pool, p);
   //xgc_info("pop_calling_stack L.calling_stack_root.next = %p\n", L.calling_stack_root.next);
 }
 

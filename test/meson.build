@@ -3,7 +3,8 @@ test_source = files(
 
 
 executable('t.out', 't.c',
-           include_directories : [inc,luaext_inc]
+           include_directories : [inc,luaext_inc],
+           dependencies : [ gc_dep ],
            )
 
 
