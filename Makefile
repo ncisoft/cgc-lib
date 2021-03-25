@@ -1,11 +1,11 @@
-.PHONY : build help build-v init build-clean build-clang build-gcc rebuild release clean clean-fake 
+.PHONY : build help build-v init build-clean build-clang build-gcc rebuild release clean clean-fake
 .PHONY : run gdb xinit ldd  clang-test func-test
 .PHONY : compile compile-v  tags lua-test clang-test uuid check_gc_root_new
-.PHONY : xinit
+.PHONY : xinit snippet
 
 git-dir := $(shell git rev-parse --show-toplevel | tr -d '\n')
 
-build: compile tags
+build: compile tags snippet
 	#	cd build && ninja -v && cd .. && ctags src/*.cc include/*.h*
 
 build-v: compile-v tags
@@ -21,15 +21,18 @@ xinit:
 		./bin/wrapper-init.sh && \
 		./bin/wrapper-sync.sh && \
 		cd build && \
-		CC=clang CXX=clang++ meson -Db_lundef=false .. && \
+		CC=gcc CXX=g++ meson -Db_lundef=false .. && \
 		cd .. && \
 		touch .xinit_done )
 
 compile-v:
 	cd build && ninja -v && cd .. && pwd
 
+snippet:
+	./bin/translate.lua update-vbox.sh tt include/snippets/tt.h
+
 tags:
-	ctags  src/*.c test/*.c include/*.h*
+	ctags  src/*.[hc] test/*.[hc] include/*.h*
 
 uuid:
 	@echo generate uuid ...

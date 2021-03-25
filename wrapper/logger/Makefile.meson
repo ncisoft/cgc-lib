@@ -1,0 +1,10 @@
+all: xdone
+
+git-dir := $(shell git rev-parse --show-toplevel | tr -d '\n')
+xdone: Makefile.meson meson.build
+	true &&                                               \
+		./autogen.sh &&                                   \
+		./configure --prefix=${git-dir}/.xopt &&          \
+		make && make install &&                           \
+		touch xdone
+

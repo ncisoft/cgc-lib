@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <execinfo.h>
-
+#include <sys/types.h>
 
 typedef struct {
   lua_State *L;
@@ -15,7 +15,7 @@ typedef struct {
 
 #define K_ALIVEROOT_MAP "__alive_root_map" // {root->{}, root.hex->root}
 #define MT_ROOT "__mt_root"
-#define MT_MANAGED_OBJ "__mt_managed_ob"
+#define MT_MANAGED_OBJ "__mt_managed_obj"
 
 #define luat_true 1
 #define luat_false 0
@@ -33,37 +33,102 @@ typedef struct
   fobj_gc _gc;
 } xgc_obj_t;
 
+typedef struct calling_stack
+{
+  struct calling_stack *next;
+} calling_stack_t;
+
+struct
+{
+  bool inited;
+  calling_stack_t calling_stack_root;
+}L = {.inited = false, .calling_stack_root.next=NULL};
+
+static void initL()
+{
+  if (L.inited == true)
+    return;
+  L.inited = true;
+  L.calling_stack_root.next = NULL;
+}
+
 /*--------- static objects -------------*/
  int __gc_log_level = GC_LOGLEVEL_DEBUG;
 static gc_heap_t __gc_heap = { NULL };
 static gc_root_t __gc_roots = { NULL };
 
 /*--------- static functions -------------*/
+static void push_calling_stack()
+{
+  initL();
+  calling_stack_t *p = (calling_stack_t *)calloc(1, sizeof(calling_stack_t));
+  xgc_debug("calling_stack_t *p= %p\n", p);
+  xgc_assert(p);
+  p->next = L.calling_stack_root.next;
+  L.calling_stack_root.next = p;
+  xgc_debug ("L.calling_stack_root.next = %p\n", L.calling_stack_root.next);
+//  xgc_print_stacktrace(__FILE__, __LINE__);
+}
+
+static void pop_calling_stack()
+{
+  calling_stack_t *p = L.calling_stack_root.next;
+  xgc_assert(p);
+  L.calling_stack_root.next = p->next;
+  free(p);
+  //xgc_info("pop_calling_stack L.calling_stack_root.next = %p\n", L.calling_stack_root.next);
+}
+
+static calling_stack_t* peek_calling_stack()
+{
+  return L.calling_stack_root.next;
+}
+
+calling_stack_t *find_calling_stack_parent(void *p)
+{
+  calling_stack_t *ps = (calling_stack_t *)p;
+  xgc_assert(ps);
+  return ps->next;
+}
+
 static gc_heap_t *gc_heap_t_init();
-static gc_root_t *gc_root_new_with_param(bool  is_primitive, char *func_name, char *parent_func_name);
+static gc_root_t *gc_root_new_with_param(bool is_primitive, char *func_name, void *func, void *parent_func);
 static int __root_gc(lua_State* L);
 static int __obj_gc(lua_State* L);
-static gc_root_t *__get_my_function_by_backtrace(int iLevel, gc_root_t *self_proot);
+static gc_root_t *__get_my_func_by_backtrace(int iLevel, gc_root_t *self_proot);
 
 void xgc_print_stacktrace(char *fname, int lineno)
 {
-    int size = 16;
-    void * array[16];
-    int stack_num = backtrace(array, size);
+  int size = 16;
+  void * array[16];
+  int stack_num = backtrace(array, size);
 
-    xgc_debug("backstrace: %s:%d ...\n", fname, lineno);
+  xgc_debug("backstrace: %s:%d ...\n", fname, lineno);
 
-    char ** stacktrace = backtrace_symbols(array, stack_num);
-    for (int i = 0; i < stack_num; ++i)
+  char ** stacktrace = backtrace_symbols(array, stack_num);
+  for (int i = 0; i < stack_num; ++i)
     {
-        printf(__C_MAGENTA__);
-        printf("\t%s\n", stacktrace[i]);
-        printf(__C_RESET__);
+      printf(__C_MAGENTA__);
+      printf("\t%s%s\n", stacktrace[i], __C_RESET__);
     }
-    free(stacktrace);
-    //xgc_println();
+  free(stacktrace);
+  //xgc_println();
+
+}
+extern void *gc_obj_holder_new(gc_root_t *proot, void *p, delegated_free _free)
+{
+  gc_obj_holder_t  *holder = gc_malloc(proot, sizeof(gc_obj_holder_t));
+  holder->p = p;
+  holder->_free = _free;
+  return holder;
 }
 
+extern void gc_root_cleanup(void *p)
+{
+  gc_root_t *proot=p;
+  //gc_root_close(&proot);
+  proot->m_closed = MASK_INITIAL_CLOSED;
+}
 
 gc_heap_t  *gc_heap_t_init()
 {
@@ -100,42 +165,55 @@ gc_heap_t  *gc_heap_t_init()
   return pgch;
 }
 
-void gc_root_close(gc_root_t **pproot)
+void gc_root_close(gc_root_ptr_t *pproot)
 {
-  gc_root_t *proot = *pproot;
-
+  gc_root_ptr_t proot = *pproot;
+  pop_calling_stack();
+  dismiss_unused(pproot);
+  if (proot->is_primitive)
+    {
+      proot->m_closed = MASK_INITIAL_CLOSED;
+      gc_collect();
+    }
+  else
+    xgc_info("postpone collect <%s> parent_func=%p because its return type is nor primitive",
+             proot->my_func_name, proot->my_parent_func
+             );
 }
 
 int __root_gc(lua_State* L)
 {
   gc_root_t *proot = cast(gc_root_t *, lua_touserdata(L, -1));
-  xgc_debug("release gc_root=%p func=%s\n", proot, proot->my_function_name);
+  xgc_debug("release <%s> gc_root=%p func=%p\n", proot->my_func_name, proot, proot->my_func);
   return 0;
 }
 
 int __obj_gc(lua_State* L)
 {
   xgc_obj_t *xobj = cast(xgc_obj_t *, lua_touserdata(L, -1));
-  xgc_debug("  release _p=%p, xobj=%p\n", xobj+1,xobj);
+  gc_root_t *proot = xobj->proot;
+  xgc_debug("  release <%s> _p=%p, xobj=%p\n", proot->my_func_name,
+            xobj+1,xobj);
   if (xobj->_gc)
     xobj->_gc(xobj->p);
   return 0;
 }
 
-gc_root_t *gc_root_new_with_param(bool  is_primitive,
-				  char *func_name, char *parent_func_name)
+gc_root_t *gc_root_new_with_param(bool  is_primitive, char *func_name,
+				  void *func, void *parent_func)
 {
   gc_heap_t *pgch = gc_heap_t_init();
   lua_State *L = pgch->L;
   int _top = lua_gettop(L);
   gc_root_t *proot;
 
-  xgc_debug("-- func_name = %s\n", func_name);
-  xgc_debug("-- parc_name = %s\n", parent_func_name);
-  xgc_assert(func_name[0] != '\0');
+  xgc_debug("-- func = %p\n", func);
+  xgc_debug("-- parent = %p\n", parent_func);
+  xgc_debug("-- __gc_roots.next = %p\n", __gc_roots.next);
+  xgc_assert(func != NULL);
   if (__gc_roots.next != NULL)
-    xgc_assert( parent_func_name[0] != '\0' );
-  xgc_assert(func_name[0] != '\0');
+    xgc_assert( parent_func != NULL);
+  xgc_assert(func != NULL);
   // step(1): get _G.K_ALIVEROOT_MAP
     {
       lua_getglobal(pgch->L, K_ALIVEROOT_MAP);
@@ -152,11 +230,11 @@ gc_root_t *gc_root_new_with_param(bool  is_primitive,
 
       proot = cast(gc_root_t*,  lua_newuserdata(pgch->L, sizeof(gc_root_t)));
       proot->m_closed = MASK_NONE;
-      strncpy( proot->my_function_name, func_name, sizeof(proot->my_function_name));
-      strncpy( proot->my_parent_function_name, parent_func_name, sizeof(proot->my_parent_function_name));
+      proot->my_func_name = func_name;
+      proot->my_func= func;
+      proot->my_parent_func= parent_func;
       proot->is_primitive = is_primitive;
       proot->next = __gc_roots.next;
-      proot->iLoop = 0;
       __gc_roots.next = proot;
 
       xgc_assert ( lua_isuserdata(pgch->L, -1) );
@@ -187,28 +265,42 @@ gc_root_t *gc_root_new_with_param(bool  is_primitive,
     }
 
 
-  xgc_debug("**new proot = %p, my_func=%s\n\n", proot, proot->my_function_name);
+  xgc_info("**new proot = <%s> %p, my_func=%p parent_func=%p\n\n",
+           proot->my_func_name,
+           proot,
+           proot->my_func,
+           proot->my_parent_func);
   return proot;
 
 }
-gc_root_t *gc_root_new()
+gc_root_t *gc_root_new(const char *function_name)
 {
-  gc_root_t tmp_root = {NULL};
-  gc_root_t *pfakeroot= __get_my_function_by_backtrace(2, &tmp_root);
-  xgc_debug("** my_stack=%s\n", pfakeroot->my_function_name);
-  xgc_debug("gc_root_new()\n");
-  gc_collect();
-  return gc_root_new_with_param(true, pfakeroot->my_function_name, pfakeroot->my_parent_function_name);
+  push_calling_stack();
+  xgc_debug("gc_root_new(), __gc_roots.next=%p\n", __gc_roots.next);
+  gc_root_t tmp_root = {.next=NULL,
+      .my_func_name = cast(char *, function_name),
+      .my_func=NULL, .my_parent_func=NULL};
+  gc_root_t *pfakeroot= __get_my_func_by_backtrace(2, &tmp_root);
+  xgc_debug("** my_stack=%p--%p--\n", pfakeroot->my_func, pfakeroot->my_parent_func);
+  xgc_debug("__gc_roots.next = %p\n", __gc_roots.next);
+  //gc_collect();
+  xgc_debug("-- __gc_roots.next = <%p>\n", __gc_roots.next);
+  return gc_root_new_with_param(true, pfakeroot->my_func_name,
+                                pfakeroot->my_func, pfakeroot->my_parent_func);
 }
 
-gc_root_t *gc_root_new_with_complex_return()
+gc_root_t *gc_root_new_with_complex_return(const char *function_name)
 {
-  gc_root_t tmp_root = {NULL};
-  gc_root_t *pfakeroot= __get_my_function_by_backtrace(2, &tmp_root);
-  xgc_debug("** my_stack=%s\n", pfakeroot->my_function_name);
+  push_calling_stack();
+  gc_root_t tmp_root = {.next=NULL,
+      .my_func_name = cast(char *, function_name),
+      .my_func=NULL, .my_parent_func=NULL};
+  gc_root_t *pfakeroot= __get_my_func_by_backtrace(2, &tmp_root);
+  xgc_debug("** my_stack=%p\n", pfakeroot->my_func);
   xgc_debug("gc_root_new()\n");
-  gc_collect();
-  return gc_root_new_with_param(false, pfakeroot->my_function_name, pfakeroot->my_parent_function_name);
+  //gc_collect();
+  return gc_root_new_with_param(false,pfakeroot->my_func_name,
+                                pfakeroot->my_func, pfakeroot->my_parent_func);
 
 }
 
@@ -228,6 +320,7 @@ extern void *gc_malloc_with_gc(gc_root_t *proot, size_t sz, fobj_gc _gc)
 
   // step(1): get _G.K_ALIVEROOT_MAP proot
     {
+      xgc_info("<%s>\n", proot->my_func_name);
       lua_getglobal(L, K_ALIVEROOT_MAP);
       xgc_pushuserdata(L, proot);
       xgc_assert( lua_isuserdata(L, -1) );
@@ -277,7 +370,7 @@ static void xgc_mark_ref_with_params(void *source_ptr, void *dest_ptr, bool is_o
   lua_State* L = pgch->L;
   int _top = lua_gettop(L);
   xgc_obj_t *sp = cast(xgc_obj_t*, source_ptr)-1;
-  xgc_obj_t *dp = cast(xgc_obj_t*, source_ptr)-1;
+  xgc_obj_t *dp = cast(xgc_obj_t*, dest_ptr)-1;
 
 step01: // get _G.K_ALIVEROOT_MAP[sp.proot] as {}
     {
@@ -332,6 +425,9 @@ step03: // set ref: _G.K_ALIVEROOT_MAP[sp->proot].sp[dp] = true
       lua_rawset(L, -3);
       lua_pop(L, 1);
       xgc_assert(_top+0 == lua_gettop(L));
+      xgc_info("gc_mark_ref succ proot=<%s>, source=%p dest=%p\n",
+               sp->proot->my_func_name,
+               source_ptr, dest_ptr);
     }
 }
 
@@ -396,6 +492,55 @@ step02: // set _G.K_ALIVEROOT_MAP[sp.proot].sp={}
     }
 }
 
+static void gc_mark()
+{
+  bool do_scan=true;
+  int niterator = 0;
+
+  while (do_scan == true)
+    {
+      bool new_mark=false;
+      for (gc_root_t *proot = __gc_roots.next; proot != NULL; proot = proot->next)
+        {
+          if (proot->m_closed == MASK_NONE )
+            for (gc_root_t *pmask = __gc_roots.next; pmask != NULL; pmask = pmask->next)
+              if (proot->my_parent_func == pmask->my_func && pmask->m_closed > MASK_NONE)
+                {
+                  proot->m_closed = MASK_SUBSEQUENT_CLOSED;
+                  xgc_info("[%d] mark <%s> as MASK_SUBSEQUENT_CLOSED\n", niterator, proot->my_func_name);
+                  new_mark = true;
+                  break;
+                }
+          if (new_mark == true)
+            {
+              niterator++;
+              break;
+            }
+        }
+      do_scan = new_mark;
+    }
+}
+
+static int gc_count_root()
+{
+ int n=0;
+  for (gc_root_t *proot = __gc_roots.next; proot != NULL; proot = proot->next)
+      n++;
+  return n;
+}
+
+static void gc_dump_roots()
+{
+ int n=0;
+ xgc_debug("dump __gc_roots\n");
+  for (gc_root_t *proot = __gc_roots.next; proot != NULL; proot = proot->next)
+    {
+      printf("  [%d] root=<%12s> my_func=<%p> my_parent_func=<%p>\n", n++,
+             proot->my_func_name,
+             proot->my_func, proot->my_parent_func);
+    }
+}
+
 void gc_collect()
 {
   gc_heap_t *pgch =  gc_heap_t_init();
@@ -404,13 +549,18 @@ void gc_collect()
   int nCollected = 0;
   //  lua_gc(pgch->L, LUA_GCSTEP, 1024);
 
+  gc_dump_roots();
+  gc_mark();
   lua_getglobal(L, K_ALIVEROOT_MAP);
   for (gc_root_t *prev=&__gc_roots, *proot = __gc_roots.next; proot != NULL; proot = prev->next)
     {
       if (proot->m_closed > MASK_NONE)
 	{
 	  prev->next = proot->next;
-	  xgc_info("will collect proot = %p, func=%s\n", proot, proot->my_function_name);
+	  xgc_info("will collect proot = [%d] <%s> is_primitive=%d %p, func=<%p>\n",
+                   gc_count_root(),
+                   proot->my_func_name, proot->is_primitive,
+                   proot, proot->my_func);
 
 	  xgc_pushuserdata(L, proot);
 	  lua_pushnil(L);
@@ -428,89 +578,69 @@ void gc_collect()
     {
       xgc_println();
       xgc_debug("start gc process with collected_roots = %d ...\n", nCollected);
-      xgc_print_stacktrace(__FILE__, __LINE__);
       lua_gc(pgch->L, LUA_GCCOLLECT, 0);
     }
   else
       xgc_debug("start gc process with collected_roots = %d ...\n", nCollected);
 }
 
-gc_root_t *__get_my_function_by_backtrace(int iLevel, gc_root_t *self_proot)
+gc_root_t *__get_my_func_by_backtrace(int iLevel, gc_root_t *self_proot)
 {
-  int size = 16;
-  void * array[16];
-  int stack_num = backtrace(array, size);
-  char ** stacktrace = backtrace_symbols(array, stack_num);
   gc_root_t *proot = __gc_roots.next;
   gc_root_t *proot_parent = NULL;
 
-  xgc_debug("found my_function start ...\n");
-
-    for (int i = 0; i < stack_num; ++i)
-    {
-        xgc_debug("\t%s\n", stacktrace[i]);
-    }
+  xgc_debug("found my_func start ...\n");
 
 step01: // get function by backtrace
-  self_proot->my_function_name[0] = '\0';
- xgc_assert (iLevel < stack_num)
-  if (iLevel < stack_num)
     {
-      char *cp = self_proot->my_function_name;
-      char *cpp;
-      strncpy(cp, stacktrace[iLevel], sizeof(self_proot->my_function_name));
-      if ((cpp = strchr(cp, ' ')) != NULL)
-	*cpp ='\0';
-      if ((cpp = strchr(cp, '+')) != NULL)
-	  *cpp = '\0';
+      calling_stack_t *ps = peek_calling_stack();
+      xgc_debug("peek_calling_stack()=%p\n", ps);
+      xgc_assert(ps);
+      self_proot->my_func = ps;
+      self_proot->my_parent_func = ps->next;
+
+      xgc_debug("found my_func=%p, name=%s--\n", self_proot->my_func, self_proot->my_func_name);
+      //xgc_debug("-- __gc_roots.next = <%p>\n", __gc_roots.next);
     }
 
 step02: // find out parent's proot
- if (proot != NULL)
-   {
-     for (proot_parent = NULL, proot = __gc_roots.next; proot != NULL; proot = proot->next)
-       {
-	 char * fname = proot->my_function_name;
-	 size_t fname_sz = strlen(fname);
-
-	 for (int i = iLevel+1; i < stack_num; i++)
-	   {
-	       if ( strncmp(fname, stacktrace[i], fname_sz) )
-		 continue;
-	       // found parent root
-	       proot_parent = proot;
-	       strncpy(self_proot->my_parent_function_name, proot->my_function_name, sizeof(self_proot->my_parent_function_name));
-	       break;
-	     }
-	   if (proot_parent != NULL)
-	     {
-	       break;
-	     }
-	 }
-    }
+    if (proot != NULL)
+      {
+        for (proot_parent = NULL, proot = __gc_roots.next; proot != NULL; proot = proot->next)
+          {
+            if (self_proot->my_parent_func == proot->my_func)
+              {
+                // found parent root
+                proot_parent = proot;
+                break;
+              }
+          }
+      }
 
 step03: // found parent proot, set neighbour proot which is primitive
-  if (proot_parent != NULL)
-    {
-      proot = __gc_roots.next;
-      for (; proot != proot_parent && proot != NULL; proot = proot->next)
-	if (proot->is_primitive && proot->m_closed == MASK_NONE)
-	{
-	  gc_root_t *xproot = __gc_roots.next;
-	  size_t sz = strlen(proot->my_function_name);
-	  proot->m_closed = MASK_INITIAL_CLOSED;
-	  //set subsequent child root to be closed;
-	  for (; xproot != NULL && xproot != proot; xproot = xproot->next)
-	    {
-	      if (xproot->m_closed != MASK_INITIAL_CLOSED &&
-		  !strncmp(xproot->my_parent_function_name, proot->my_function_name, sz))
-		{
-		  xproot->m_closed = MASK_SUBSEQUENT_CLOSED;
-		}
- 	    }
-	}
-    }
+    if (proot_parent == NULL)
+      {
+        xgc_info("<%s> found proot_parent fail\n", self_proot->my_func_name);
+      }
+    else
+      {
+        proot = __gc_roots.next;
+        for (; proot != proot_parent && proot != NULL; proot = proot->next)
+          if (proot->is_primitive && proot->m_closed == MASK_NONE)
+            {
+              gc_root_t *xproot = __gc_roots.next;
+              proot->m_closed = MASK_INITIAL_CLOSED;
+              //set subsequent child root to be closed;
+              for (; xproot != NULL && xproot != proot; xproot = xproot->next)
+                {
+                  if (xproot->m_closed != MASK_INITIAL_CLOSED &&
+                      xproot->my_parent_func != proot->my_func)
+                    {
+                      xproot->m_closed = MASK_SUBSEQUENT_CLOSED;
+                    }
+                }
+            }
+      }
 step200_exit:
-  free(stacktrace);
   return self_proot;
 }

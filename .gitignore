@@ -34,3 +34,4 @@ build/*
 .phony_target
 .xinit_done
 .xopt/*
+include/snippet/*.h
