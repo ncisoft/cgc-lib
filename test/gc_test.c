@@ -79,6 +79,7 @@ void testcase_0E()
   using_raii_proot()
     {
       void *p30 = obj_new(proot, 30);
+      dismiss_unused(p30);
 
     }
 }

@@ -6,8 +6,8 @@ let g:EasyGrepPerlStyle=1
 let g:EasyGrepCommand=1
 let g:EasyGrepRecursive=1
 "https://gist.github.com/seyDoggy/613f2648cebc6c7b456f
-unlet g:ctrlp_custom_ignore
-unlet g:ctrlp_user_command
+"unlet g:ctrlp_custom_ignore
+"unlet g:ctrlp_user_command
 " set your own custom ignore settings
 set wildignore+=*/tmp/*,*.so,*.swp,*.zip,*.o,tags
 let g:ctrlp_custom_ignore = {
@@ -58,16 +58,39 @@ let g:diminactive_use_colorcolumn = 0
 let g:ctrlp_clear_cache_on_exit = 1
 let g:tagbar_ctags_bin = "ctags"
 let g:ycm_global_ycm_extra_conf=g:git_dir . '/.ycm_extra_conf.py'
+let g:ale_c_build_dir='./build'
+let g:ycm_log_level = 'debug'
+let g:ycm_use_clangd = 0
+let g:ale_linters = {'c': ['clang'], 'lua': ['luac'], 'cpp': ['clang'], 'python': ['flake8', 'pylint']}
+
 
 nmap <leader><space> :FixWhitespace<cr>
 set directory=$HOME/tmp/dirty
 
+function! Help()
+  echo "nmap <leader>yl :YcmDebugInfo<cr>"
+  echo "nmap <leader>yr :YcmRestartServer<cr>"
+  echo "nmap <leader>yd :YcmDiags<cr>"
+  echo "nmap <leader>ai :ALEInfo<cr>"
+  echo "nmap <leader><space> :FixWhitespace<cr>"
+  echo "nmap <leader>yi :call ShowIncs()<cr>"
+  echo "nmap <leader>yh :call help()<cr>"
+endfunction
+
+set directory=$HOME/tmp/dirty
+nmap <leader>yl :YcmDebugInfo<cr>
+nmap <leader>yr :YcmRestartServer<cr>
+nmap <leader>yale :ALEInfo<cr>
+nmap <leader><space> :FixWhitespace<cr>
+nmap <leader>yi :call ShowIncs()<cr>
+nmap <leader>yh :call Help()<cr>
+
 let g:ale_c_incs = [
       \ '.',
-      \ g:git_dir . '/src/',
-      \ g:git_dir . '/include/',
-      \ g:git_dir . '/utils/',
-      \ g:git_dir . '/.xopt/include',
+      \ './src/',
+      \ './include/',
+      \ './utils/',
+      \ './.xopt/include',
       \ '.xopt/include',
       \ 'contrib/lua51-ext',
       \ '/usr/include/lua5.1'

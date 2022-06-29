@@ -21,7 +21,7 @@ fmt_target = [[
 #define {{ &var_name }} \
 {{&lines}} ""
 ]]
-local fmt_line = [[ "{{ &line }}" \ 
+local fmt_line = [[ "{{ &line }}" \
 ]]
 
 local fd=io.open(fname, "r")
