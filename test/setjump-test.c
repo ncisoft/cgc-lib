@@ -6,22 +6,23 @@
 #undef GC_LOG_BRIEF
 #define GC_LOG_BRIEF false
 
-static jmp_buf buf;  
-   
-void second(void) {  
+static jmp_buf buf;
+
+void second(void) {
   xgc_debug("second\n");
-  longjmp(buf,1);             // 跳回setjmp的调用处 - 使得setjmp返回值为1  
-}  
-   
-void first(void) {  
-    second();  
+  longjmp(buf,1);             // 跳回setjmp的调用处 - 使得setjmp返回值为1
+}
+
+void first(void) {
+    second();
   xgc_debug("first\n");
-}  
+}
 
 extern void check_jumpbuf_nextpc();
 void check_jmpbuf()
 {
-  jmp_buf xbuf;  
+#if defined (__linux__)
+  jmp_buf xbuf;
   int x=222;
 
    if ( ! setjmp(xbuf))
@@ -34,7 +35,7 @@ void check_jmpbuf()
        xgc_debug("pc = %p, next pc=%p\n", &check_jmpbuf, &&__next_pc);
        printf("\n");
      }
-   else 
+   else
     {
       xgc_debug("main, x = %d\n",x);
     }
@@ -42,7 +43,7 @@ __next_pc:
    xgc_info("reg_t sizeof=%u, sizeof_uint(int)=%u, sizeof_uint(long)=%u\n", sizeof_uint(xbuf[0].__jmpbuf[0]), sizeof_uint(int), sizeof_uint(long));
    xgc_info("__WORDSIZE = %d\n", __WORDSIZE );
    xgc_info("__sizeof(long long) = %u\n", sizeof_uint(long long) );
-
+#endif
 }
 
 void check_jumpbuf_nextpc()
@@ -61,7 +62,7 @@ int main()
     {
       first();
     }
-  else 
+  else
     {
       xgc_debug("main, x = %d\n",x);
     }

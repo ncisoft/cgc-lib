@@ -5,7 +5,7 @@
 
 git-dir := $(shell git rev-parse --show-toplevel | tr -d '\n')
 
-build: compile tags snippet
+build:  snippet compile tags
 	#	cd build && ninja -v && cd .. && ctags src/*.cc include/*.h*
 
 build-v: compile-v tags
@@ -29,7 +29,7 @@ compile-v:
 	cd build && ninja -v && cd .. && pwd
 
 snippet:
-	./bin/translate.lua update-vbox.sh tt include/snippets/tt.h
+	./bin/translate.lua sync.sh tt include/snippets/tt.h
 
 tags:
 	ctags  src/*.[hc] test/*.[hc] include/*.h*
